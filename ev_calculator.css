@@ -1,0 +1,39 @@
+#app {
+    display:flex;
+}
+
+#options {
+    width: 40%;
+}
+
+#valuegrid {
+    width: 40%;
+}
+
+#calculated {
+    width: 20%;
+}
+
+.vgp1name {
+    writing-mode:vertical-rl;
+    line-height:35px;
+    width: 35px;
+    vertical-align: text-top;
+    padding-top:10px;
+}
+
+.vgrow {
+    height: 35px;
+    display:flex;
+}
+
+.vgp2name {
+    padding-left:10px;
+    line-height:35px;
+}
+
+.playercheck {
+    width:35px;
+    height:35px;
+    align-content: center;
+}
