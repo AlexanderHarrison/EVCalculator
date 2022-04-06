@@ -9,18 +9,27 @@
 <body>
 <div id="app">
     <div id="options">
-        Player 1 options:
+        <b>Player 1 options:</b>
         <options pnum=1></options>
         <br>
-        Player 2 options:
+        <br>
+        <b>Player 2 options:</b>
         <options pnum=2></options>
+        <br>
+        <br>
+        <b>Value grid:</b>
+        <valuegrid v-slot="{p1opt, p2opt}"><playercheck :p1optid='p1opt.id' :p2optid='p2opt.id'></playercheck></valuegrid>
     </div>
     <div id="valuegrid">
-        Value grid:
-        <valuegrid></valuegrid>
+        <b>Outcome value grid</b>
+        <valuegrid v-slot="{p1opt, p2opt}"><valuespot :p1optid='p1opt.id' :p2optid='p2opt.id'></valuespot></valuegrid>
+        <br>
+        <br>
+        <b>Scaled outcome value grid</b>
+        <valuegrid v-slot="{p1opt, p2opt}"><scaledvaluespot :p1opt='p1opt' :p2opt='p2opt'></scaledvaluespot></valuegrid>
     </div>
     <div id="calculated">
-        Values:
+        <b>Values:</b>
         <values></values>
     </div>
 </div>

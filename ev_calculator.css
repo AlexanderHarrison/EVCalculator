@@ -37,3 +37,12 @@
     height:35px;
     align-content: center;
 }
+
+.valuespot {
+    line-height:35px;
+    min-width:35px;
+    display: inline-block;
+    height:35px;
+    font-size: 12px;
+    align-content: center;
+}
