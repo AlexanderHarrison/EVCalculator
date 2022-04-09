@@ -114,7 +114,10 @@ Vue.component("valuegrid", {
         update_grid: function(info) {
             this.grid[info.p1optid * 4096 + info.p2optid] = info.set;
             bus.$emit("update-grid", this.grid);
-        }
+        },
+        sum: function(pnum, id) {
+            
+        },
     },
     created() {
         bus.$on("update-options", this.update_options);
@@ -123,12 +126,17 @@ Vue.component("valuegrid", {
     template: 
 `<div>
     <div v-for="p2opt in p2_options" v-bind:key="p2opt.id" class="vgrow"> 
-        <span v-for="p1opt in p1_options" v-bind:key="p1opt.id"><slot name="mid" :p1opt="p1opt" :p2opt="p2opt"></slot></span>
-        <slot name="end"></slot>
+        <span v-for="p1opt in p1_options" v-bind:key="p1opt.id">
+            <slot name="mid" :p1opt="p1opt" :p2opt="p2opt"></slot>
+        </span>
+        <slot name="end" :pnum="2" :opt="p2opt"></slot>
         <span class="vgp2name p2colour">{{ p2opt.name }}</span>
     </div>
     <span v-for="p1opt in p1_options">
-        <!--<slot name="end"></slot>-->
+        <slot name="end" :pnum="1" :opt="p1opt"></slot>
+    </span>
+    <div></div>
+    <span v-for="p1opt in p1_options">
         <span class="vgp1name p1colour">{{ p1opt.name }}</span>
     </span>
 </div>`
@@ -212,9 +220,9 @@ Vue.component("scaledvaluespot", {
         },
         update_options: function (ev) {
             if (ev.pnum === 1) {
-                this.p1_options = ev.new_options;
+                this.p1opt = ev.new_options;
             } else {
-                this.p2_options = ev.new_options;
+                this.p2opt = ev.new_options;
             }
             this.update_value();
         },
