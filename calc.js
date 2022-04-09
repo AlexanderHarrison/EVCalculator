@@ -78,6 +78,7 @@ Vue.component("options", {
 `<div>
     <button v-on:click="add_option()">+</button>
     <div v-for="option in options" v-bind:key="option.id">
+        <button v-on:click="remove_option(option)">-</button>
         <input 
             type=text size=5 :ref="'opt'+option.id"  v-model="option.name"
             :placeholder="\'option \' + option.id"
@@ -89,7 +90,6 @@ Vue.component("options", {
         </input>
         <input type=range v-on:change="reshape_probs(option.id)" min=0 max=100 v-model="option.probability" :ref="'prob'+option.id"></input>
         {{ format(option.probability) }}
-        <button v-on:click="remove_option(option)">-</button>
     </div>
 </div>`
 });
@@ -123,10 +123,14 @@ Vue.component("valuegrid", {
     template: 
 `<div>
     <div v-for="p2opt in p2_options" v-bind:key="p2opt.id" class="vgrow"> 
-        <span v-for="p1opt in p1_options" v-bind:key="p1opt.id"><slot :p1opt="p1opt" :p2opt="p2opt"></slot></span>
-        <span class="vgp2name">{{ p2opt.name }}</span>
+        <span v-for="p1opt in p1_options" v-bind:key="p1opt.id"><slot name="mid" :p1opt="p1opt" :p2opt="p2opt"></slot></span>
+        <slot name="end"></slot>
+        <span class="vgp2name p2colour">{{ p2opt.name }}</span>
     </div>
-    <span class="vgp1name" v-for="p1opt in p1_options">{{ p1opt.name }}</span>
+    <span v-for="p1opt in p1_options">
+        <!--<slot name="end"></slot>-->
+        <span class="vgp1name p1colour">{{ p1opt.name }}</span>
+    </span>
 </div>`
 });
 
@@ -140,7 +144,7 @@ Vue.component("playercheck", {
         onclick: function (event) {
             if (event.button === 0) { // left
                 this.set = 1;
-                this.style="background:url(./images/downarrow.png),dodgerblue;";
+                this.style="background:url(./images/downarrow.png),deepskyblue;";
             } else if (event.button === 1) { // middle
                 this.set = 0;
                 this.style="background-color:lightgray;";
@@ -163,6 +167,7 @@ Vue.component("valuespot", {
         p2_value: 1,
         set: 0,
         value: 0,
+        colourclass: "",
     }},
     methods: {
         update_grid: function (grid) {
@@ -179,6 +184,7 @@ Vue.component("valuespot", {
         },
         update_value: function() {
             this.value = this.set == -1 ? -this.p2_value : this.set == 1 ? this.p1_value : 0;
+            this.colourclass = this.value < 0 ? "p2colour" : this.value > 0 ? "p1colour" : "";
         },
         format: function(val) {
             return Number(val).toFixed(2);
@@ -189,7 +195,7 @@ Vue.component("valuespot", {
         bus.$on("update-grid", this.update_grid);
     },
     template: 
-`<span class="valuespot">{{ format(value) }}</span>`
+`<span :class="'valuespot ' + colourclass">{{ format(value) }}</span>`
 });
 
 Vue.component("scaledvaluespot", {
@@ -197,6 +203,7 @@ Vue.component("scaledvaluespot", {
     data: function () { return {
         set: 0,
         value: 0,
+        colourclass: "",
     }},
     methods: {
         update_grid: function (grid) {
@@ -212,10 +219,8 @@ Vue.component("scaledvaluespot", {
             this.update_value();
         },
         update_value: function() {
-            //console.log(this.p1_prob);
-            //console.log(this.p2_prob);
             this.value = this.p1opt.probability * this.p2opt.probability / 10000 * (this.set == -1 ? -this.p2opt.value : (this.set == 1 ? this.p1opt.value : 0));
-            //console.log( (this.p1));
+            this.colourclass = this.value < 0 ? "p2colour" : this.value > 0 ? "p1colour" : "";
         },
         format: function(val) {
             return Number(val).toFixed(2);
@@ -226,7 +231,7 @@ Vue.component("scaledvaluespot", {
         bus.$on("update-grid", this.update_grid);
     },
     template: 
-`<span class="valuespot">{{ format(value) }}</span>`
+`<span :class="'valuespot ' + colourclass">{{ format(value) }}</span>`
 });
 
 Vue.component("values", {

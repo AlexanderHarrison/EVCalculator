@@ -9,27 +9,40 @@
 <body>
 <div id="app">
     <div id="options">
-        <b>Player 1 options:</b>
+        <b class="title p1colour">Player 1 options:</b>
         <options pnum=1></options>
         <br>
         <br>
-        <b>Player 2 options:</b>
+        <b class="title p2colour">Player 2 options:</b>
         <options pnum=2></options>
         <br>
         <br>
-        <b>Value grid:</b>
-        <valuegrid v-slot="{p1opt, p2opt}"><playercheck :p1optid='p1opt.id' :p2optid='p2opt.id'></playercheck></valuegrid>
+        <b class="title">Value grid:</b>
+        <valuegrid>
+            <template v-slot:mid="{p1opt, p2opt}">
+                <playercheck :p1optid='p1opt.id' :p2optid='p2opt.id'></playercheck>
+            </template>
+        </valuegrid>
     </div>
     <div id="valuegrid">
-        <b>Outcome value grid</b>
-        <valuegrid v-slot="{p1opt, p2opt}"><valuespot :p1optid='p1opt.id' :p2optid='p2opt.id'></valuespot></valuegrid>
+        <b class="title">Outcome value grid</b>
+        <valuegrid>
+            <template v-slot:mid="{p1opt, p2opt}">
+                <valuespot :p1optid='p1opt.id' :p2optid='p2opt.id'></valuespot>
+            </template>
+            <template v-slot:end></template>
+        </valuegrid>
         <br>
         <br>
-        <b>Scaled outcome value grid</b>
-        <valuegrid v-slot="{p1opt, p2opt}"><scaledvaluespot :p1opt='p1opt' :p2opt='p2opt'></scaledvaluespot></valuegrid>
+        <b class="title">Scaled outcome value grid</b>
+        <valuegrid>
+            <template v-slot:mid="{p1opt, p2opt}">
+                <scaledvaluespot :p1opt='p1opt' :p2opt='p2opt'></scaledvaluespot>
+            </template>
+        </valuegrid>
     </div>
     <div id="calculated">
-        <b>Values:</b>
+        <b class="title">Values:</b>
         <values></values>
     </div>
 </div>

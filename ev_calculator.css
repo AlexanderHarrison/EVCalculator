@@ -1,8 +1,7 @@
 #app {
     display:flex;
 }
-
-#options {
+#options { 
     width: 40%;
 }
 
@@ -14,12 +13,19 @@
     width: 20%;
 }
 
+.title {
+    padding: 10px;
+    display:inline-block;
+}
+
 .vgp1name {
     writing-mode:vertical-rl;
     line-height:35px;
     width: 35px;
     vertical-align: text-top;
     padding-top:10px;
+    margin-top: 1px;
+    padding-bottom:10px;
 }
 
 .vgrow {
@@ -29,6 +35,7 @@
 
 .vgp2name {
     padding-left:10px;
+    padding-right:10px;
     line-height:35px;
 }
 
@@ -39,10 +46,20 @@
 }
 
 .valuespot {
-    line-height:35px;
-    min-width:35px;
+    line-height:33px;
+    min-width:33px;
     display: inline-block;
-    height:35px;
+    height:34px;
     font-size: 12px;
+    border: 1px solid black;
     align-content: center;
+    text-align: center;
+}
+
+.p1colour {
+    background-color: deepskyblue;
+}
+
+.p2colour {
+    background-color: orange;
 }
