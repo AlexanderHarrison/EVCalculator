@@ -1,74 +1,76 @@
-var bus = new Vue();
+Vue.prototype.$opts = Vue.observable({});
+Vue.set(Vue.prototype.$opts, 0, []);
+Vue.set(Vue.prototype.$opts, 1, []);
+//// player 1 is along the top, player 2 is along the side
+//// stored as a list of rows
+Vue.prototype.$grid = Vue.observable({update: false});
+Vue.prototype.$read_grid = function (p1id, p2id) {
+    return this.$grid[p1id * 4096 + p2id];
+}
 
 Vue.component("options", {
     props: ["pnum"],
     data: function () { return {
         id_counter: 0,
-        options: [],
     }},
+    computed: {
+        opts: function() {
+            return this.$opts[this.pnum-1];
+        },
+    },
     methods: {
         add_option: function (event) {
             const id = this.new_id();
-            if (this.options.length == 0) {
-                this.options.push({
-                    id: id,
+            if (Object.keys(this.$opts[this.pnum-1]).length == 0) {
+                this.$set(this.$opts[this.pnum-1], id, {
                     name: "option " + id,
                     probability: 100.0,
                     value: 1.0,
                 });
             } else {
-                this.options.push({
-                    id: id,
+                this.$set(this.$opts[this.pnum-1], id, {
                     name: "option " + id,
                     probability: 0.0,
                     value: 1.0,
                 });
             }
 
-            this.send_update_options();
-            this.$nextTick(() => this.$refs["opt"+id][0].select());
+            //this.$nextTick(() => this.$refs["opt"+id][0].select());
         },
         remove_option: function (opt, event) {
-            const index = this.options.indexOf(opt);
-            this.options.splice(index, 1);
-            this.send_update_options();
+            Vue.delete(this.opts, opt.id);
         },
         new_id: function (event) {
             const id = this.id_counter;
             this.id_counter += 1;
             return id;
         },
-        send_update_options: function () {
-            bus.$emit("update-options", {new_options: this.options, pnum: this.pnum});
-        },
         reshape_probs: function (id) { // need to assure probabilities sum to 100
             let probs = {};
             let prob_sum = 0;
-            this.options.forEach(opt => {
+            for (const [optid, opt] of Object.entries(this.opts)) {
                 const p = Number(opt.probability);
-                probs[opt.id] = p;
+                probs[optid] = p;
                 prob_sum += p;
-            });
+            }
             const change_needed = 100 - prob_sum;
             const can_change_sum = prob_sum - probs[id];
 
             if (can_change_sum === 0) { // if all other options are zero, we can't scale them, so evenly add to them.
-                this.options.forEach(opt => {
+                for (const [optid, opt] of Object.entries(this.opts)) {
                     const n = Object.keys(probs).length - 1;
-                    if (opt.id != id) {
+                    if (optid != id) {
                         opt.probability = Number(opt.probability) + change_needed / n;
                     }
-                });
+                }
             } else { // Scale options
-                this.options.forEach(opt => {
-                    if (opt.id != id) {
+                for (const [optid, opt] of Object.entries(this.opts)) {
+                    if (optid != id) {
                         const p = Number(opt.probability);
                         opt.probability = p + change_needed * p / can_change_sum;
                     }
-                });
+                }
             }
-
-            this.send_update_options();
         },
         format: function(val) {
             return Number(val).toFixed(2);
@@ -77,66 +79,46 @@ Vue.component("options", {
     template: 
 `<div>
     <button v-on:click="add_option()">+</button>
-    <div v-for="option in options" v-bind:key="option.id">
-        <button v-on:click="remove_option(option)">-</button>
+    <div v-for="(opt, optid) in $opts[pnum-1]" :key="optid">
+        <button v-on:click="remove_option(opt)">-</button>
         <input 
-            type=text size=5 :ref="'opt'+option.id"  v-model="option.name"
-            :placeholder="\'option \' + option.id"
+            type=text size=5 :ref="'opt'+optid"  v-model="opt.name"
+            :placeholder="\'option \' + optid"
             v-on:change="send_update_options()">
         </input>
         <input style="width:40px;"
-            type=number v-model="option.value"
-            placeholder="0" v-on:change="send_update_options()">
+            type=number v-model="opt.value"
+            placeholder="0">
         </input>
-        <input type=range v-on:change="reshape_probs(option.id)" min=0 max=100 v-model="option.probability" :ref="'prob'+option.id"></input>
-        {{ format(option.probability) }}
+        <input type=range v-on:change="reshape_probs(optid)" min=0 max=100 v-model="opt.probability"></input>
+        {{ format(opt.probability) }}
     </div>
 </div>`
 });
 
 Vue.component("valuegrid", {
-    props: ["tag", "attributes"],
-    data: function () { return {
-        // player 1 is along the top, player 2 is along the side
-        // stored as a list of rows
-        p1_options: [],
-        p2_options: [],
-        grid: {},
-    }},
-    methods: {
-        update_options: function (ev) {
-            if (ev.pnum == 1) {
-                this.p1_options = ev.new_options;
-            } else {
-                this.p2_options = ev.new_options;
-            }
+    computed: {
+        p1opts: function() {
+            return this.$opts[0];
         },
-        update_grid: function(info) {
-            this.grid[info.p1optid * 4096 + info.p2optid] = info.set;
-            bus.$emit("update-grid", this.grid);
+        p2opts: function() {
+            return this.$opts[1];
         },
-        sum: function(pnum, id) {
-            
-        },
-    },
-    created() {
-        bus.$on("update-options", this.update_options);
-        bus.$on("option-win-set", this.update_grid);
     },
     template: 
 `<div>
-    <div v-for="p2opt in p2_options" v-bind:key="p2opt.id" class="vgrow"> 
-        <span v-for="p1opt in p1_options" v-bind:key="p1opt.id">
-            <slot name="mid" :p1opt="p1opt" :p2opt="p2opt"></slot>
+    <div v-for="(p2opt, p2optid) in p2opts" v-bind:key="p2optid" class="vgrow"> 
+        <span v-for="(p1opt, p1optid) in p1opts" v-bind:key="p1opt.id">
+            <slot name="mid" :p1optid="p1optid" :p2optid="p2optid"></slot>
         </span>
         <slot name="end" :pnum="2" :opt="p2opt"></slot>
         <span class="vgp2name p2colour">{{ p2opt.name }}</span>
     </div>
-    <span v-for="p1opt in p1_options">
+    <span v-for="p1opt in p1opts">
         <slot name="end" :pnum="1" :opt="p1opt"></slot>
     </span>
     <div></div>
-    <span v-for="p1opt in p1_options">
+    <span v-for="p1opt in p1opts">
         <span class="vgp1name p1colour">{{ p1opt.name }}</span>
     </span>
 </div>`
@@ -161,8 +143,12 @@ Vue.component("playercheck", {
                 this.style="background:url(./images/rightarrow.png),orange;";
             }
 
-            bus.$emit("option-win-set", {p1optid: this.p1optid, p2optid: this.p2optid, set: this.set});
+            Vue.set(this.$grid, this.p1optid * 4096 + this.p2optid, this.set);
+            Vue.set(this.$grid, "update", !this.$grid.update);
         }
+    },
+    created: function() {
+        this.onclick({button: 1});
     },
     template: 
 `<button class="playercheck" :style="style" oncontextmenu="return false;" v-on:mousedown="onclick($event)"></button>`
@@ -171,123 +157,71 @@ Vue.component("playercheck", {
 Vue.component("valuespot", {
     props: ["p1optid", "p2optid"],
     data: function () { return {
-        p1_value: 1,
-        p2_value: 1,
-        set: 0,
-        value: 0,
         colourclass: "",
     }},
-    methods: {
-        update_grid: function (grid) {
-            this.set = grid[this.p1optid * 4096 + this.p2optid];
-            this.update_value();
+    computed: {
+        value: function() {
+            const set = this.$grid[this.p1optid * 4096 + this.p2optid];
+            const p1_val = this.$opts[0][this.p1optid].value;
+            const p2_val = this.$opts[1][this.p2optid].value;
+            const value = set == -1 ? -p2_val : set == 1 ? p1_val : 0;
+            this.colourclass = value < 0 ? "p2colour" : value > 0 ? "p1colour" : "";
+            return Number(value).toFixed(2);
         },
-        update_options: function (ev) {
-            if (ev.pnum === 1) {
-                this.p1_value = ev.new_options[this.p1optid].value;
-            } else {
-                this.p2_value = ev.new_options[this.p2optid].value;
-            }
-            this.update_value();
-        },
-        update_value: function() {
-            this.value = this.set == -1 ? -this.p2_value : this.set == 1 ? this.p1_value : 0;
-            this.colourclass = this.value < 0 ? "p2colour" : this.value > 0 ? "p1colour" : "";
-        },
-        format: function(val) {
-            return Number(val).toFixed(2);
-        }
-    },
-    created() {
-        bus.$on("update-options", this.update_options);
-        bus.$on("update-grid", this.update_grid);
     },
     template: 
-`<span :class="'valuespot ' + colourclass">{{ format(value) }}</span>`
+`<span :class="'valuespot ' + colourclass">{{ value }}</span>`
 });
 
 Vue.component("scaledvaluespot", {
-    props: ["p1opt", "p2opt"],
+    props: ["p1optid", "p2optid"],
     data: function () { return {
-        set: 0,
-        value: 0,
         colourclass: "",
     }},
-    methods: {
-        update_grid: function (grid) {
-            this.set = grid[this.p1opt.id * 4096 + this.p2opt.id];
-            this.update_value();
+    computed: {
+        value: function() {
+            const set = this.$grid[this.p1optid * 4096 + this.p2optid];
+            const p1_opt = this.$opts[0][this.p1optid];
+            const p2_opt = this.$opts[1][this.p2optid];
+            const value = set == -1 ? -p2_opt.value : set == 1 ? p1_opt.value : 0;
+            const scaledval = value * p1_opt.probability * p2_opt.probability / 10000;
+            this.colourclass = scaledval < 0 ? "p2colour" : scaledval > 0 ? "p1colour" : "";
+            return Number(scaledval).toFixed(2);
         },
-        update_options: function (ev) {
-            if (ev.pnum === 1) {
-                this.p1opt = ev.new_options;
-            } else {
-                this.p2opt = ev.new_options;
-            }
-            this.update_value();
-        },
-        update_value: function() {
-            this.value = this.p1opt.probability * this.p2opt.probability / 10000 * (this.set == -1 ? -this.p2opt.value : (this.set == 1 ? this.p1opt.value : 0));
-            this.colourclass = this.value < 0 ? "p2colour" : this.value > 0 ? "p1colour" : "";
-        },
-        format: function(val) {
-            return Number(val).toFixed(2);
-        }
-    },
-    created() {
-        bus.$on("update-options", this.update_options);
-        bus.$on("update-grid", this.update_grid);
     },
     template: 
-`<span :class="'valuespot ' + colourclass">{{ format(value) }}</span>`
+`<span :class="'valuespot ' + colourclass">{{ value }}</span>`
 });
 
 Vue.component("values", {
-    data: function () { return {
-        p1_options: [],
-        p2_options: [],
-        grid: {},
-        EV: 0.0,
-    }},
-    methods: {
-        update_options: function (ev) {
-            if (ev.pnum == 1) {
-                this.p1_options = ev.new_options;
-            } else {
-                this.p2_options = ev.new_options;
-            }
-            this.update_values();
+    computed: {
+        grid: function() {
+            return this.$grid;
         },
-        update_grid: function (grid) {
-            this.grid = grid;
-            this.update_values();
-        },
-        update_values: function() {
+        value: function() {
+            const _ = this.grid.update;
             var ev = 0;
-            this.p1_options.forEach(p1opt => this.p2_options.forEach(p2opt => {
-                const set = this.grid[p1opt.id * 4096 + p2opt.id];
-                let v;
-                if (set === 0) {
-                    v = 0;
-                } else if (set === 1) {
-                    v = p1opt.value;
-                } else {
-                    v = -p2opt.value;
-                }
+            for (const [p1optid, p1opt] of Object.entries(this.$opts[0])) {
+                for (const [p2optid, p2opt] of Object.entries(this.$opts[1])) {
+                    const set = this.$grid[Number(p1optid) * 4096 + Number(p2optid)];
+                    let v;
+                    if (set == 0) {
+                        v = 0;
+                    } else if (set == 1) {
+                        v = p1opt.value;
+                    } else if (set == -1) {
+                        v = -p2opt.value;
+                    } else {
+                        v = 0.0;
+                    }
 
-                ev += v * p1opt.probability * p2opt.probability / 10000;
-            }));
-            this.EV = ev;
+                    ev += v * p1opt.probability * p2opt.probability / 10000;
+                }
+            }
+            return ev.toFixed(2);
         },
-        format: function(val) {
-            return val.toFixed(2);
-        }
     },
-    created() {
-        bus.$on("update-options", this.update_options);
-        bus.$on("update-grid", this.update_grid);
-    },
-    template: `<div> Expected value: {{ format(EV) }}<br> </div>`
+    template: `<div> Expected value: {{ value }}<br> </div>`
 });
 
 var app = new Vue({
