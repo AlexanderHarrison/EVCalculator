@@ -37,8 +37,30 @@ Vue.component("options", {
 
             //this.$nextTick(() => this.$refs["opt"+id][0].select());
         },
-        remove_option: function (opt, event) {
-            delete(this.opts, opt.id);
+        remove_option: function (remoptid) {
+            Vue.delete(this.opts, remoptid);
+
+            let probs = {};
+            let prob_sum = 0;
+            for (const [optid, opt] of Object.entries(this.opts)) {
+                const p = Number(opt.probability);
+                probs[optid] = p;
+                prob_sum += p;
+            }
+            const change_needed = 100 - prob_sum;
+
+            if (prob_sum != 0) {
+                for (const [optid, opt] of Object.entries(this.opts)) {
+                    const p = Number(opt.probability);
+                    opt.probability = p + change_needed * p / prob_sum;
+                }
+            } else {
+                const count = Object.entries(this.opts).length;
+                for (const [optid, opt] of Object.entries(this.opts)) {
+                    const p = Number(opt.probability);
+                    opt.probability = change_needed / count;
+                }
+            }
         },
         new_id: function (event) {
             const id = this.id_counter;
@@ -80,7 +102,7 @@ Vue.component("options", {
 `<div>
     <button v-on:click="add_option()">+</button>
     <div v-for="(opt, optid) in $opts[pnum-1]" :key="optid">
-        <button v-on:click="remove_option(opt)">-</button>
+        <button v-on:click="remove_option(optid)">-</button>
         <input 
             type=text size=5 :ref="'opt'+optid"  v-model="opt.name"
             :placeholder="\'option \' + optid"
