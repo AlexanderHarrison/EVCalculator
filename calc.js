@@ -248,7 +248,6 @@ Vue.component("values", {
     template: `<div> Expected value: {{ value }}<br> </div>`
 });
 
-
 Vue.component("scaledvaluesumspot", {
     props: ["pnum", "optid"],
     data: function () { return {
@@ -275,7 +274,7 @@ Vue.component("scaledvaluesumspot", {
     methods: {
         value_of: function(thisoptid, otheroptid) {
             const [p1optid, p2optid] = this.pnum === 1 ? [thisoptid, otheroptid] : [otheroptid, thisoptid];
-            const set = this.$grid[p1optid * 4096 + p2optid];
+            const set = this.$grid[Number(p1optid) * 4096 + Number(p2optid)];
             const p1opts = this.$opts[0][p1optid];
             const p2opts = this.$opts[1][p2optid];
             const value = set == -1 ? -p2opts.value : set == 1 ? p1opts.value : 0;
@@ -312,7 +311,7 @@ Vue.component("valuesumspot", {
     methods: {
         value_of: function(thisoptid, otheroptid) {
             const [p1optid, p2optid] = this.pnum === 1 ? [thisoptid, otheroptid] : [otheroptid, thisoptid];
-            const set = this.$grid[p1optid * 4096 + p2optid];
+            const set = this.$grid[Number(p1optid) * 4096 + Number(p2optid)];
             const p1_val = this.$opts[0][p1optid].value;
             const p2_val = this.$opts[1][p2optid].value;
             const value = set == -1 ? -p2_val : set == 1 ? p1_val : 0;
