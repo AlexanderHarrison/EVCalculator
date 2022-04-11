@@ -1,6 +1,6 @@
 Vue.prototype.$opts = Vue.observable({});
-Vue.set(Vue.prototype.$opts, 0, []);
-Vue.set(Vue.prototype.$opts, 1, []);
+Vue.set(Vue.prototype.$opts, 0, {});
+Vue.set(Vue.prototype.$opts, 1, {});
 //// player 1 is along the top, player 2 is along the side
 //// stored as a list of rows
 Vue.prototype.$grid = Vue.observable({update: false});
@@ -38,7 +38,7 @@ Vue.component("options", {
             //this.$nextTick(() => this.$refs["opt"+id][0].select());
         },
         remove_option: function (opt, event) {
-            Vue.delete(this.opts, opt.id);
+            delete(this.opts, opt.id);
         },
         new_id: function (event) {
             const id = this.id_counter;
@@ -111,11 +111,11 @@ Vue.component("valuegrid", {
         <span v-for="(p1opt, p1optid) in p1opts" v-bind:key="p1opt.id">
             <slot name="mid" :p1optid="p1optid" :p2optid="p2optid"></slot>
         </span>
-        <slot name="end" :pnum="2" :opt="p2opt"></slot>
+        <slot name="end" :pnum="2" :optid="p2optid"></slot>
         <span class="vgp2name p2colour">{{ p2opt.name }}</span>
     </div>
-    <span v-for="p1opt in p1opts">
-        <slot name="end" :pnum="1" :opt="p1opt"></slot>
+    <span v-for="(p, p1optid) in p1opts">
+        <slot name="end" :pnum="1" :optid="p1optid"></slot>
     </span>
     <div></div>
     <span v-for="p1opt in p1opts">
@@ -137,7 +137,7 @@ Vue.component("playercheck", {
                 this.style="background:url(./images/downarrow.png),deepskyblue;";
             } else if (event.button === 1) { // middle
                 this.set = 0;
-                this.style="background-color:lightgray;";
+                this.style = "background-color:lightgray;";
             } else if (event.button === 2) { // right
                 this.set = -1;
                 this.style="background:url(./images/rightarrow.png),orange;";
@@ -222,6 +222,86 @@ Vue.component("values", {
         },
     },
     template: `<div> Expected value: {{ value }}<br> </div>`
+});
+
+
+Vue.component("scaledvaluesumspot", {
+    props: ["pnum", "optid"],
+    data: function () { return {
+        colourclass: "",
+    }},
+    computed: {
+        grid: function() {
+            return this.$grid;
+        },
+        opts: function() {
+            return this.$opts[this.pnum-1];
+        },
+        value: function() {
+            const _ = this.grid.update;
+            var sum = 0;
+            const otheropts = this.$opts[(this.pnum-1)^1];
+            for (const [otheroptid, _] of Object.entries(otheropts)) {
+                sum += Number(this.value_of(this.optid, otheroptid));
+            }
+            return sum.toFixed(2);
+        },
+        cssclass: function() {
+            return this.pnum === 1 ? "valuespotbottom" : "valuespotright";
+        },
+    },
+    methods: {
+        value_of: function(thisoptid, otheroptid) {
+            const [p1optid, p2optid] = this.pnum === 1 ? [thisoptid, otheroptid] : [otheroptid, thisoptid];
+            const set = this.$grid[p1optid * 4096 + p2optid];
+            const p1opts = this.$opts[0][p1optid];
+            const p2opts = this.$opts[1][p2optid];
+            const value = set == -1 ? -p2opts.value : set == 1 ? p1opts.value : 0;
+            const scaledvalue = Number(value * p1opts.probability * p2opts.probability / 10000);
+            this.colourclass = scaledvalue < 0 ? "p2colour" : scaledvalue > 0 ? "p1colour" : "";
+            return scaledvalue;
+        }
+    },
+    template: `<span :class="cssclass + ' ' + colourclass">{{ value }}</span>`
+});
+
+Vue.component("valuesumspot", {
+    props: ["pnum", "optid"],
+    data: function () { return {
+        colourclass: "",
+    }},
+    computed: {
+        grid: function() {
+            return this.$grid;
+        },
+        opts: function() {
+            return this.$opts[this.pnum-1];
+        },
+        value: function() {
+            const _ = this.grid.update;
+            var sum = 0;
+            const otheropts = this.$opts[(this.pnum-1)^1];
+            for (const [otheroptid, _] of Object.entries(otheropts)) {
+                sum += Number(this.value_of(this.optid, otheroptid));
+            }
+            this.colourclass = sum < 0 ? "p2colour" : sum > 0 ? "p1colour" : "";
+            return sum.toFixed(2);
+        },
+        cssclass: function() {
+            return this.pnum === 1 ? "valuespotbottom" : "valuespotright";
+        },
+    },
+    methods: {
+        value_of: function(thisoptid, otheroptid) {
+            const [p1optid, p2optid] = this.pnum === 1 ? [thisoptid, otheroptid] : [otheroptid, thisoptid];
+            const set = this.$grid[p1optid * 4096 + p2optid];
+            const p1_val = this.$opts[0][p1optid].value;
+            const p2_val = this.$opts[1][p2optid].value;
+            const value = set == -1 ? -p2_val : set == 1 ? p1_val : 0;
+            return Number(value);
+        }
+    },
+    template: `<span :class="cssclass + ' ' + colourclass">{{ value }}</span>`
 });
 
 var app = new Vue({

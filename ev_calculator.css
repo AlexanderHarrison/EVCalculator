@@ -45,7 +45,7 @@
     align-content: center;
 }
 
-.valuespot {
+.valuespot, .valuespotbottom, .valuespotright {
     line-height:33px;
     min-width:33px;
     display: inline-block;
@@ -54,6 +54,15 @@
     border: 1px solid black;
     align-content: center;
     text-align: center;
+}
+
+.valuespotbottom {
+    border-top: 3px solid black;
+    padding-top: 3px;
+}
+
+.valuespotright {
+    border-left: 3px solid black;
 }
 
 .p1colour {

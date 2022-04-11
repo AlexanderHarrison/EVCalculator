@@ -30,6 +30,9 @@
             <template v-slot:mid="{p1optid, p2optid}">
                 <valuespot :p1optid='p1optid' :p2optid='p2optid'></valuespot>
             </template>
+            <template v-slot:end="{pnum, optid}">
+                <valuesumspot :pnum='pnum' :optid='optid'></valuesumspot>
+            </template>
         </valuegrid>
         <br>
         <br>
@@ -37,6 +40,9 @@
         <valuegrid>
             <template v-slot:mid="{p1optid, p2optid}">
                 <scaledvaluespot :p1optid='p1optid' :p2optid='p2optid'></scaledvaluespot>
+            </template>
+            <template v-slot:end="{pnum, optid}">
+                <scaledvaluesumspot :pnum='pnum' :optid='optid'></valuesumspot>
             </template>
         </valuegrid>
     </div>
