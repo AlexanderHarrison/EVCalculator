@@ -4,9 +4,7 @@
 #options { 
     width: 40%;
 }
-
-#valuegrid {
-    width: 40%;
+#valuegrid { width: 40%;
 }
 
 #calculated {
@@ -47,7 +45,7 @@
 
 .valuespot, .valuespotbottom, .valuespotright {
     line-height:33px;
-    min-width:33px;
+    width:33px;
     display: inline-block;
     height:34px;
     font-size: 12px;

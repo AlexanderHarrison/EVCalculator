@@ -4,9 +4,6 @@ Vue.set(Vue.prototype.$opts, 1, {});
 //// player 1 is along the top, player 2 is along the side
 //// stored as a list of rows
 Vue.prototype.$grid = Vue.observable({update: false});
-Vue.prototype.$read_grid = function (p1id, p2id) {
-    return this.$grid[p1id * 4096 + p2id];
-}
 
 Vue.component("options", {
     props: ["pnum"],
@@ -79,10 +76,16 @@ Vue.component("options", {
             const can_change_sum = prob_sum - probs[id];
 
             if (can_change_sum === 0) { // if all other options are zero, we can't scale them, so evenly add to them.
-                for (const [optid, opt] of Object.entries(this.opts)) {
-                    const n = Object.keys(probs).length - 1;
-                    if (optid != id) {
-                        opt.probability = Number(opt.probability) + change_needed / n;
+                const n = Object.keys(probs).length - 1;
+                if (n === 0) {
+                    for (const [optid, opt] of Object.entries(this.opts)) {
+                        opt.probability = 100;
+                    }
+                } else {
+                    for (const [optid, opt] of Object.entries(this.opts)) {
+                        if (optid != id) {
+                            opt.probability = Number(opt.probability) + change_needed / n;
+                        }
                     }
                 }
             } else { // Scale options
@@ -112,7 +115,7 @@ Vue.component("options", {
             type=number v-model="opt.value"
             placeholder="0">
         </input>
-        <input type=range v-on:change="reshape_probs(optid)" min=0 max=100 v-model="opt.probability"></input>
+        <input type=range v-on:change="reshape_probs(optid)" min=0 max=100 v-model.lazy="opt.probability"></input>
         {{ format(opt.probability) }}
     </div>
 </div>`
@@ -165,7 +168,7 @@ Vue.component("playercheck", {
                 this.style="background:url(./images/rightarrow.png),orange;";
             }
 
-            Vue.set(this.$grid, this.p1optid * 4096 + this.p2optid, this.set);
+            this.$grid[Number(this.p1optid) * 4096 + Number(this.p2optid)] = Number(this.set);
             Vue.set(this.$grid, "update", !this.$grid.update);
         }
     },
@@ -183,7 +186,8 @@ Vue.component("valuespot", {
     }},
     computed: {
         value: function() {
-            const set = this.$grid[this.p1optid * 4096 + this.p2optid];
+            const _ = this.$grid.update;
+            const set = this.$grid[Number(this.p1optid) * 4096 + Number(this.p2optid)];
             const p1_val = this.$opts[0][this.p1optid].value;
             const p2_val = this.$opts[1][this.p2optid].value;
             const value = set == -1 ? -p2_val : set == 1 ? p1_val : 0;
@@ -202,7 +206,8 @@ Vue.component("scaledvaluespot", {
     }},
     computed: {
         value: function() {
-            const set = this.$grid[this.p1optid * 4096 + this.p2optid];
+            const _ = this.$grid.update;
+            const set = this.$grid[Number(this.p1optid) * 4096 + Number(this.p2optid)];
             const p1_opt = this.$opts[0][this.p1optid];
             const p2_opt = this.$opts[1][this.p2optid];
             const value = set == -1 ? -p2_opt.value : set == 1 ? p1_opt.value : 0;
@@ -217,21 +222,18 @@ Vue.component("scaledvaluespot", {
 
 Vue.component("values", {
     computed: {
-        grid: function() {
-            return this.$grid;
-        },
         value: function() {
-            const _ = this.grid.update;
+            const _ = this.$grid.update;
             var ev = 0;
             for (const [p1optid, p1opt] of Object.entries(this.$opts[0])) {
                 for (const [p2optid, p2opt] of Object.entries(this.$opts[1])) {
                     const set = this.$grid[Number(p1optid) * 4096 + Number(p2optid)];
                     let v;
-                    if (set == 0) {
+                    if (set === 0) {
                         v = 0;
-                    } else if (set == 1) {
+                    } else if (set === 1) {
                         v = p1opt.value;
-                    } else if (set == -1) {
+                    } else if (set === -1) {
                         v = -p2opt.value;
                     } else {
                         v = 0.0;
@@ -253,19 +255,17 @@ Vue.component("scaledvaluesumspot", {
         colourclass: "",
     }},
     computed: {
-        grid: function() {
-            return this.$grid;
-        },
         opts: function() {
             return this.$opts[this.pnum-1];
         },
         value: function() {
-            const _ = this.grid.update;
+            const _ = this.$grid.update;
             var sum = 0;
             const otheropts = this.$opts[(this.pnum-1)^1];
             for (const [otheroptid, _] of Object.entries(otheropts)) {
                 sum += Number(this.value_of(this.optid, otheroptid));
             }
+            this.colourclass = sum < 0 ? "p2colour" : sum > 0 ? "p1colour" : "";
             return sum.toFixed(2);
         },
         cssclass: function() {
@@ -280,7 +280,6 @@ Vue.component("scaledvaluesumspot", {
             const p2opts = this.$opts[1][p2optid];
             const value = set == -1 ? -p2opts.value : set == 1 ? p1opts.value : 0;
             const scaledvalue = Number(value * p1opts.probability * p2opts.probability / 10000);
-            this.colourclass = scaledvalue < 0 ? "p2colour" : scaledvalue > 0 ? "p1colour" : "";
             return scaledvalue;
         }
     },
@@ -293,14 +292,11 @@ Vue.component("valuesumspot", {
         colourclass: "",
     }},
     computed: {
-        grid: function() {
-            return this.$grid;
-        },
         opts: function() {
             return this.$opts[this.pnum-1];
         },
         value: function() {
-            const _ = this.grid.update;
+            const _ = this.$grid.update;
             var sum = 0;
             const otheropts = this.$opts[(this.pnum-1)^1];
             for (const [otheroptid, _] of Object.entries(otheropts)) {
