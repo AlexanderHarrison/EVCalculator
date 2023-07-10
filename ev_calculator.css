@@ -1,3 +1,8 @@
+body {
+    background: #2d2d2d;
+    color: #cccccc;
+}
+
 #app {
     display:flex;
 }
@@ -64,9 +69,30 @@
 }
 
 .p1colour {
-    background-color: deepskyblue;
+    color: #2d2d2d;
+    background-color: #66cccc;
+}
+
+button,
+input[type="number"],
+input[type="text"],
+input[type="range"] {
+  background-color: #515151;
+  color: #cccccc;
+  border-color: #393939;
+}
+
+input[type="range"]::-mox-range-progress {
+input[type="range"]::-webkit-slider-thumb {
+  background-color: #6699cc;
+}
+
+input[type="range"]::-moz-range-track {
+input[type="range"]::-webkit-slider-runnable-track {
+  background-color: #515151;
 }
 
 .p2colour {
-    background-color: orange;
+    color: #2d2d2d;
+    background-color: #f99157;
 }
